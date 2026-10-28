@@ -1,9 +1,5 @@
 # Section 4 — AI Reflection
 
-> **Note to self before submitting:** replace every `[bracketed]` placeholder
-> with my own experience, and delete this note. The team uses AI daily — the
-> goal is an accurate picture of how I actually worked, not a perfect story.
-
 ## 1. What I used AI for across the four sections
 
 - **Section 1 (design):** as a sounding board for the two big calls — whether
@@ -62,7 +58,7 @@ replaced it with a timezone-explicit helper.
    Nairobi has no DST and the clinic runs in one place, so wall-clock times
    match how staff and patients think; converting everywhere would add
    complexity with no payoff at this scale. I trusted this because it's
-   domain reasoning — [I know the deployment context] — and the migration
+   domain reasoning — the brief describes a single small clinic that runs on one wall clock, not a multi-region platform — and the migration
    path to UTC-per-clinic is written down if the clinic grows.
 2. **Reschedule keeps the same doctor.** In a real clinic, "move my
    appointment" means moving *that* consultation; switching doctors is a
