@@ -7,7 +7,7 @@ appointment slots online. Built with **FastAPI + SQLAlchemy 2 + PostgreSQL**,
 deployed on **Render**, with a **GitHub Actions** pipeline that tests every PR
 and auto-deploys `main`.
 
-- **Live API:** `https://<paste-your-render-url>.onrender.com` <!-- TODO: paste final Render URL -->
+- **Live API:** `https://clinic-booking-api-4k36.onrender.com <!-- TODO: paste final Render URL -->
 - **Interactive docs:** `/docs` (Swagger UI, generated from OpenAPI)
 - **AI reflection (Section 4):** [AI_REFLECTION.md](./AI_REFLECTION.md)
 
