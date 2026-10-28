@@ -1,0 +1,60 @@
+name: CI/CD
+
+on:
+  pull_request: # every PR: run the test suite
+  push:
+    branches: [main] # PR merged (or direct push): run tests, then deploy
+
+jobs:
+  test:
+    name: Test (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      # The suite runs against real PostgreSQL in CI, proving the models,
+      # partial unique index and queries work on the production engine.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: clinic
+          POSTGRES_PASSWORD: clinic
+          POSTGRES_DB: clinic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U clinic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg2://clinic:clinic@localhost:5432/clinic_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run test suite
+        run: pytest --cov=app --cov-report=term-missing -q
+
+  deploy:
+    name: Deploy to Render (main only)
+    needs: test # never deploy a commit whose tests failed
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK secret is not set; skipping deploy trigger."
+            echo "Set it in repo Settings -> Secrets -> Actions (Render dashboard -> service -> Deploy Hook URL)."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK"
+          echo "Render deploy triggered."
