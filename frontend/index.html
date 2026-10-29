@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clinic Booking API — Live Demo</title>
+  <meta
+    name="description"
+    content="Browser demo for the Clinic Booking REST API (FastAPI + PostgreSQL on Render): availability, booking, cancellation and rescheduling — every request shown live."
+  />
+  <link rel="stylesheet" href="styles.css" />
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e7c6b'/%3E%3Cpath d='M16 8v16M8 16h16' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E"
+  />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <div>
+          <h1>Clinic Booking API — live demo</h1>
+          <p class="tagline">
+            A browser client for the FastAPI booking service. Every action on
+            this page is a real HTTP call — watch the API console.
+          </p>
+        </div>
+      </div>
+      <div class="header-side">
+        <a id="api-base-link" class="api-base" href="#" target="_blank" rel="noopener"></a>
+        <span id="health-pill" class="pill pill-pending" role="status">Checking API…</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="banner" class="banner hidden">
+    <div class="wrap">
+      <span id="banner-text">Waking the API…</span>
+      <button id="banner-retry" class="btn small">Retry connection</button>
+    </div>
+  </div>
+
+  <main class="wrap layout">
+    <div class="col-actions">
+      <!-- STEP 1 -->
+      <section class="card" aria-labelledby="h-doctors">
+        <div class="card-head">
+          <span class="step-no" aria-hidden="true">1</span>
+          <div>
+            <h2 id="h-doctors">Choose a doctor</h2>
+            <p class="sub">Five doctors with different working hours and specialties.</p>
+            <p class="endpoint">
+              <code class="ep-get">GET</code><code>/doctors</code>
+            </p>
+          </div>
+        </div>
+        <div id="doctor-list" class="doctor-grid" role="group" aria-label="Doctors">
+          <div class="skeleton">Loading doctors from the API…</div>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="card" aria-labelledby="h-availability">
+        <div class="card-head">
+          <span class="step-no" aria-hidden="true">2</span>
+          <div>
+            <h2 id="h-availability">Pick a free slot</h2>
+            <p class="sub">
+              Availability is derived live: working hours minus booked
+              appointments. Slots inside the 60-minute lead window are hidden
+              by the API.
+            </p>
+            <p class="endpoint">
+              <code class="ep-get">GET</code>
+              <code>/doctors/{id}/availability?date=YYYY-MM-DD</code>
+            </p>
+          </div>
+        </div>
+        <div class="avail-bar">
+          <label for="date-input">Date (clinic-local, Africa/Nairobi)</label>
+          <input type="date" id="date-input" />
+          <button id="refresh-slots" class="btn small">Refresh slots</button>
+        </div>
+        <div id="slot-grid" class="slot-grid" role="group" aria-label="Free slots">
+          <div class="skeleton">Loading availability…</div>
+        </div>
+        <p class="small-note">
+          All times are the clinic's wall clock (Africa/Nairobi, UTC+3). A
+          missing morning slot below is a real demo booking.
+        </p>
+      </section>
+
+      <!-- STEP 3 -->
+      <section class="card" aria-labelledby="h-book">
+        <div class="card-head">
+          <span class="step-no" aria-hidden="true">3</span>
+          <div>
+            <h2 id="h-book">Book the appointment</h2>
+            <p class="sub">
+              Use one of the demo patients, or register your own. Booking a
+              taken slot returns the 409 conflict envelope.
+            </p>
+            <p class="endpoint">
+              <code class="ep-post">POST</code><code>/appointments</code>
+              <span class="note">·</span>
+              <code class="ep-post">POST</code><code>/patients</code>
+            </p>
+          </div>
+        </div>
+
+        <div class="book-summary" id="book-summary">
+          <div class="row"><b>Doctor</b><span id="sum-doctor" class="muted">—</span></div>
+          <div class="row"><b>Slot</b><span id="sum-slot" class="muted">pick a slot above</span></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field full">
+            <label for="patient-select">Patient</label>
+            <select id="patient-select" aria-describedby="patient-help"></select>
+            <p class="small-note" id="patient-help">
+              Demo patients are pre-seeded (ids 1–4). Or register a new one
+              below.
+            </p>
+          </div>
+        </div>
+
+        <details class="new-patient">
+          <summary>Register a new patient</summary>
+          <div class="form-grid" style="margin-top: 12px">
+            <div class="field">
+              <label for="np-name">Name</label>
+              <input type="text" id="np-name" placeholder="Wanjiku Mwangi" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="np-email">Email (unique)</label>
+              <input type="email" id="np-email" placeholder="wanjiku@example.com" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="np-phone">Phone (optional)</label>
+              <input type="tel" id="np-phone" placeholder="+254722000111" autocomplete="off" />
+            </div>
+            <div class="field" style="align-self: end">
+              <button id="np-submit" class="btn" style="width: 100%">Create patient</button>
+            </div>
+          </div>
+        </details>
+
+        <button id="book-btn" class="btn primary" disabled style="margin-top: 16px">
+          Book appointment
+        </button>
+        <div id="book-result" class="hidden" role="status"></div>
+      </section>
+
+      <!-- STEP 4 -->
+      <section class="card" aria-labelledby="h-manage">
+        <div class="card-head">
+          <span class="step-no" aria-hidden="true">4</span>
+          <div>
+            <h2 id="h-manage">Cancel or reschedule</h2>
+            <p class="sub">
+              Cancelling frees the slot instantly (derived availability —
+              there is no slot table to sync).
+            </p>
+            <p class="endpoint">
+              <code class="ep-get">GET</code>
+              <code>/patients/{id}/appointments?status=…</code>
+              <span class="note">·</span>
+              <code class="ep-patch">PATCH</code><code>/appointments/{id}/cancel</code>
+              <span class="note">·</span>
+              <code class="ep-patch">PATCH</code><code>/appointments/{id}/reschedule</code>
+            </p>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-bottom: 12px">
+          <div class="field">
+            <label for="manage-patient-select">Patient</label>
+            <select id="manage-patient-select"></select>
+          </div>
+        </div>
+
+        <div class="tabs" role="group" aria-label="Status filter">
+          <button class="tab" data-status="upcoming" aria-pressed="true">Upcoming</button>
+          <button class="tab" data-status="cancelled" aria-pressed="false">Cancelled</button>
+          <button class="tab" data-status="all" aria-pressed="false">All</button>
+        </div>
+
+        <div id="appt-list" class="appt-list" aria-live="polite">
+          <div class="skeleton">Loading appointments…</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- API CONSOLE -->
+    <aside class="col-console" aria-label="API request console">
+      <div class="card console">
+        <div class="console-head">
+          <h2><span class="live-dot" aria-hidden="true"></span> API console</h2>
+          <div class="console-counters">
+            <span class="counter" id="c-total" title="Total requests">0</span>
+            <span class="counter ok" id="c-ok" title="2xx responses">0</span>
+            <span class="counter err" id="c-err" title="4xx/5xx + network errors">0</span>
+            <button id="console-clear" class="btn small" title="Clear the console">Clear</button>
+          </div>
+        </div>
+        <ol id="console-list" class="console-list"></ol>
+        <p class="console-foot">
+          Requests go straight from your browser to the API (CORS is enabled
+          on the backend). Click any entry to inspect the exact request and
+          response payloads.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Clinic Booking API — take-home assessment demo</span>
+      <nav aria-label="Project links">
+        <a href="https://github.com/Roy-Wanyoike/clinic-booking-api" target="_blank" rel="noopener">Repository</a>
+        <a href="https://clinic-booking-api-4k36.onrender.com/docs" target="_blank" rel="noopener">Swagger UI</a>
+        <a href="https://github.com/Roy-Wanyoike/clinic-booking-api#demo-data--try-the-live-api-in-60-seconds" target="_blank" rel="noopener">Demo data</a>
+      </nav>
+    </div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding: 16px; text-align: center">
+      This demo needs JavaScript — it calls the REST API from your browser.
+    </p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
