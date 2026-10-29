@@ -65,5 +65,4 @@ replaced it with a timezone-explicit helper.
    cancel-and-rebook. Keeping the endpoint single-purpose made validation
    cleaner (one doctor's working hours, one overlap check) and matches user
    intent. I trusted my judgment here because it's a product-behaviour call,
-   not a technical one — [add a sentence on your own experience with similar
-   product decisions].
+   not a technical one.
