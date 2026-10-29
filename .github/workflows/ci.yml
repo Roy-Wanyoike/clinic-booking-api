@@ -4,6 +4,7 @@ on:
   pull_request: # every PR: run the test suite
   push:
     branches: [main] # PR merged (or direct push): run tests, then deploy
+  workflow_dispatch: # manual run (Actions tab -> CI/CD -> Run workflow)
 
 jobs:
   test:

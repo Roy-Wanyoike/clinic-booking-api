@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # Title shown in OpenAPI docs.
     app_name: str = "Clinic Booking API"
 
+    # Browser origins allowed to call the API from JavaScript (comma-
+    # separated). Default "*" keeps the hosted demo consumable from any
+    # static host (e.g. the Vercel-hosted frontend/ demo); production would
+    # pin this to the real frontend origins, e.g.
+    # CORS_ORIGINS=https://clinic-demo.vercel.app,https://clinic.example.com
+    cors_origins: str = "*"
+
 
 settings = Settings()
 

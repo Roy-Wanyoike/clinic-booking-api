@@ -42,6 +42,30 @@ runs).
 
 ---
 
+## Frontend demo (browser client)
+
+[`frontend/`](./frontend) is a dependency-free static page that demonstrates
+how every endpoint is consumed from a browser: doctor cards, live
+availability grids, booking (including a deliberate **409 `SLOT_TAKEN`**
+demo button), cancellation with the required reason, rescheduling, and a
+per-patient appointment browser. An **API console** panel logs every
+request/response — method, path, status code, latency and JSON payloads —
+so the HTTP conversation is fully visible while clicking around.
+
+- **No build step** — plain HTML/CSS/JS. The API base defaults to the live
+  Render URL and can be overridden with `?api=<base-url>` (e.g. to point it
+  at a local `uvicorn`).
+- **CORS** — the API enables cross-origin browser access out of the box
+  (`CORS_ORIGINS` env var, default `*`); pin it to your frontend origin in
+  production (see `app/config.py`).
+- **Run locally:** `cd frontend && python3 -m http.server 8080`
+- **Deploy:** import the repo on Vercel with **Root Directory = `frontend`**
+  — no build command, no dependencies:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FRoy-Wanyoike%2Fclinic-booking-api&root-directory=frontend&project-name=clinic-booking-demo)
+
+---
+
 ## 1. System design
 
 ### 1.1 Requirements analysis
@@ -234,6 +258,10 @@ explanation (decision D3).
 | GET | `/patients/{id}/appointments?status=upcoming\|cancelled\|all` | **bonus** — sorted by date |
 | GET | `/health` | liveness probe |
 
+All responses allow cross-origin browser access via CORS (configurable with
+`CORS_ORIGINS`, default `*`) so the static `frontend/` demo — or any review
+page — can consume the API directly from the browser.
+
 Validation performed by `POST /appointments` (and identically by
 reschedule): doctor & patient exist → 404; grid-aligned 30-minute start →
 422; inside the doctor's working hours → 422; not in the past → 422; at
@@ -258,10 +286,11 @@ Response example (`POST /appointments`, 201):
 
 ## 4. Testing
 
-50 tests cover: the full slot-grid math, every validation branch of booking,
+53 tests cover: the full slot-grid math, every validation branch of booking,
 cancellation (slot freed + re-bookable + double-cancel 409), rescheduling
 (moves, conflicts, state errors, original preserved on failure), the bonus
-endpoints, timezone-offset rejection, the **demo-seed lifecycle**
+endpoints, timezone-offset rejection, **CORS preflight and headers** (the
+browser demo consumes the API cross-origin), the **demo-seed lifecycle**
 (installation, idempotency, dirty-database reset, stale-booking refresh) and
 **a true multi-threaded race** where two connections book the same slot and
 exactly one wins (`tests/test_concurrency.py`).

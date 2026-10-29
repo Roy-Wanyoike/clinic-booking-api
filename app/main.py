@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
@@ -40,6 +41,17 @@ app = FastAPI(
         "can be cancelled or rescheduled."
     ),
     lifespan=lifespan,
+)
+
+# Cross-origin browser access (the static frontend demo on Vercel, Swagger
+# UI tooling, review scratch pages). No cookies/auth are involved, so a
+# configurable origin list (default "*") is the right trade-off here.
+_cors_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins or ["*"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
