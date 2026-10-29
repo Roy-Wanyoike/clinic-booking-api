@@ -13,6 +13,35 @@ and auto-deploys `main`.
 
 ---
 
+## Demo data — try the live API in 60 seconds
+
+The deployed API boots with a small **demo dataset** (idempotent startup
+seeding, see decision D8): 4 registered patients and 5 upcoming booked
+appointments spread across the 5 doctors, plus one soft-cancelled appointment
+preserved with its audit trail (`cancel_reason` + `cancelled_at`). Demo
+bookings are real rows in PostgreSQL — not mocks — and they auto-refresh to
+upcoming dates if the service is idle for a long time, so they never go
+stale.
+
+Paste these into a browser (replace `YYYY-MM-DD` with tomorrow's date):
+
+1. [Doctors & working hours](https://clinic-booking-api-4k36.onrender.com/doctors)
+2. [Doctor 2's free slots](https://clinic-booking-api-4k36.onrender.com/doctors/2/availability?date=YYYY-MM-DD)
+   — the 09:00 slot is already taken by a demo booking
+3. [Patient 1's upcoming appointments](https://clinic-booking-api-4k36.onrender.com/patients/1/appointments)
+   — two demo bookings with doctor details embedded
+4. [Patient 2's full history](https://clinic-booking-api-4k36.onrender.com/patients/2/appointments?status=all)
+   — includes the cancelled appointment and its reason
+5. Then book, cancel or reschedule anything from
+   [/docs](https://clinic-booking-api-4k36.onrender.com/docs) — the demo
+   patients (ids 1-4) are ready to use, and cancelling a demo booking frees
+   its slot immediately.
+
+Set `SEED_DEMO_DATA=0` to boot without the demo dataset (doctor seeding still
+runs).
+
+---
+
 ## 1. System design
 
 ### 1.1 Requirements analysis
@@ -110,7 +139,7 @@ support partial indexes, so the guarantee is identical in both.
 | D5 | **Reschedule keeps the same doctor**, validated like a fresh booking | Matches the real workflow (you move a consultation, you don't silently switch doctors); single atomic `UPDATE` means a colliding target slot rolls back the whole move | Switching doctors requires cancel + rebook; easy to relax later |
 | D6 | **Patient double-booking guard** (409 across doctors) | The brief doesn't ask, but a patient in two places at once is a data-quality bug | Slightly stricter than required; typed as its own error code |
 | D7 | **Slots inside the 60-minute lead window are hidden** from availability | Never advertise a slot the booking endpoint would reject | "Free" and "bookable" differ by definition; documented here |
-| D8 | **Seeding doctors at startup** (idempotent) | A fresh deployment is instantly demo-able; matches "small clinic, fixed staff" | In production this would move to a migration/admin step |
+| D8 | **Seeding a demo dataset at startup** (idempotent) | A fresh deployment is instantly demo-able: reviewers see doctors, patients and upcoming bookings instead of empty tables | In production this would move to a migration/admin step; `SEED_DEMO_DATA=0` disables the demo rows |
 | D9 | **Auth is out of scope** | The brief describes one booking flow without logins; `patient_id` identifies the caller | Production would add JWT/OAuth and scope every appointment mutation to the caller |
 
 ### 1.5 Error model
@@ -163,9 +192,10 @@ uvicorn app.main:app --reload
 # -> http://127.0.0.1:8000  (Swagger UI at /docs)
 ```
 
-On startup the app creates tables and seeds the 5 clinic doctors
-(idempotent — runs only when the table is empty). Patients are created
-through the API. Example journey:
+On startup the app creates tables and seeds a **demo dataset**: the 5 clinic
+doctors, 4 demo patients and upcoming bookings (idempotent — runs only when
+missing, see [Demo data](#demo-data--try-the-live-api-in-60-seconds)). You
+can register your own patients through the API right away. Example journey:
 
 ```bash
 # register a patient
@@ -228,12 +258,13 @@ Response example (`POST /appointments`, 201):
 
 ## 4. Testing
 
-44 tests cover: the full slot-grid math, every validation branch of booking,
+50 tests cover: the full slot-grid math, every validation branch of booking,
 cancellation (slot freed + re-bookable + double-cancel 409), rescheduling
 (moves, conflicts, state errors, original preserved on failure), the bonus
-endpoints, timezone-offset rejection, and **a true multi-threaded race** where
-two connections book the same slot and exactly one wins
-(`tests/test_concurrency.py`).
+endpoints, timezone-offset rejection, the **demo-seed lifecycle**
+(installation, idempotency, dirty-database reset, stale-booking refresh) and
+**a true multi-threaded race** where two connections book the same slot and
+exactly one wins (`tests/test_concurrency.py`).
 
 ```bash
 pip install -r requirements-dev.txt

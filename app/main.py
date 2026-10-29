@@ -1,5 +1,6 @@
 """FastAPI application factory: routers, error handlers, startup seeding."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -10,16 +11,23 @@ from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.exceptions import BookingError
 from app.routers import appointments, doctors, patients
-from app.seed import seed_doctors
+from app.seed import seed_demo_data
 from app.services.slots import clinic_now
+
+# Seed activity should be visible in deployment logs (Render log stream).
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Create missing tables and seed the clinic's doctors (idempotent)."""
+    """Create missing tables and seed demo data (idempotent).
+
+    Doctors plus a small reviewer-facing demo dataset (patients and upcoming
+    bookings) are installed on an empty database — see app/seed.py.
+    """
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
-        seed_doctors(db)
+        seed_demo_data(db)
     yield
 
 
