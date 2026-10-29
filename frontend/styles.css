@@ -53,6 +53,7 @@ code {
   padding: 0.1em 0.45em;
   border-radius: 6px;
 }
+.endpoint code { overflow-wrap: anywhere; }
 code.ep-get { background: #e2f1ee; color: #0a5f52; }
 code.ep-post { background: #fdf0d9; color: #7c5200; }
 code.ep-patch { background: #efe9fb; color: #5b3a8f; }
@@ -367,7 +368,7 @@ details.new-patient summary {
 .appt-error { margin-top: 8px; font-size: 13px; color: var(--err); background: var(--err-bg); border-radius: 8px; padding: 8px 10px; }
 
 /* ---------- console ---------- */
-.col-console { position: sticky; top: 84px; }
+.col-console { position: sticky; top: 84px; min-width: 0; }
 .console { padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 110px); }
 .console-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -512,7 +513,7 @@ details.new-patient summary {
 
 /* ---------- responsive ---------- */
 @media (max-width: 1023px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
   .col-console { position: static; order: 2; }
   .console { max-height: 480px; }
 }
