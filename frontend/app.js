@@ -370,9 +370,11 @@ function showBookResult(kind, title, message, extraNode) {
   const box = dom.bookResult;
   box.className = `result-box ${kind === "ok" ? "ok" : "err"}`;
   box.replaceChildren(
-    el("p", { class: "err-title", text: title }),
-    message ? el("p", { text: message }) : null,
-    extraNode || null
+    ...[
+      el("p", { class: "err-title", text: title }),
+      message ? el("p", { text: message }) : null,
+      extraNode || null,
+    ].filter(Boolean)
   );
   box.classList.remove("hidden");
 }
@@ -711,15 +713,38 @@ function toggleReschedule(item, appt) {
  * ------------------------------------------------------------------ */
 
 function cacheDom() {
-  const ids = [
-    "banner", "banner-text", "banner-retry", "health-pill", "api-base-link",
-    "doctor-list", "date-input", "refresh-slots", "slot-grid",
-    "sum-doctor", "sum-slot", "patient-select", "np-name", "np-email",
-    "np-phone", "np-submit", "book-btn", "book-result",
-    "manage-patient-select", "appt-list", "console-list", "console-clear",
-    "c-total", "c-ok", "c-err", "toast",
-  ];
-  for (const id of ids) dom[id] = document.getElementById(id);
+  // camelCase key -> element id in index.html
+  const map = {
+    banner: "banner",
+    bannerText: "banner-text",
+    bannerRetry: "banner-retry",
+    healthPill: "health-pill",
+    apiBaseLink: "api-base-link",
+    doctorList: "doctor-list",
+    dateInput: "date-input",
+    refreshSlots: "refresh-slots",
+    slotGrid: "slot-grid",
+    sumDoctor: "sum-doctor",
+    sumSlot: "sum-slot",
+    patientSelect: "patient-select",
+    npName: "np-name",
+    npEmail: "np-email",
+    npPhone: "np-phone",
+    npSubmit: "np-submit",
+    bookBtn: "book-btn",
+    bookResult: "book-result",
+    managePatientSelect: "manage-patient-select",
+    apptList: "appt-list",
+    consoleList: "console-list",
+    consoleClear: "console-clear",
+    cTotal: "c-total",
+    cOk: "c-ok",
+    cErr: "c-err",
+    toast: "toast",
+  };
+  for (const [key, id] of Object.entries(map)) {
+    dom[key] = document.getElementById(id);
+  }
 }
 
 async function checkHealth() {
