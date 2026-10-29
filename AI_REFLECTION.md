@@ -2,7 +2,7 @@
 
 ## 1. What I used AI for across the four sections
 
-- **Section 1 (design):** as a sounding board for the two big calls — whether
+- **Section 1 (design):** as a sounding board for the two big calls whether
   to persist slot rows or derive availability, and how to make
   double-booking safe under concurrent requests. I asked it to attack my
   draft design and to name failure modes I hadn't considered.
@@ -42,23 +42,23 @@ Early in design, AI suggested pre-generating slot rows for the next 30 days
 with a `booked` flag. It sounded productive, but reviewing the proposal
 against the requirements I found three real problems: (1) cancelling or
 rescheduling must mutate a slot row in the same transaction as the
-appointment or the two drift out of sync; (2) "which 30 days?" — the table
+appointment or the two drift out of sync; (2) "which 30 days?" the table
 needs a rolling-window generator job; (3) it pushes timezone logic into
 stored rows. Derived availability (grid computed from working hours minus
 active appointments) has none of those failure modes, so I rejected the
 suggestion and documented the reasoning in the README.
 
 Smaller catch: AI-generated code used `datetime.utcnow()`, deprecated in
-Python 3.12 — the deprecation warning surfaced on the first test run and I
+Python 3.12 the deprecation warning surfaced on the first test run and I
 replaced it with a timezone-explicit helper.
 
-## 4. Two decisions I made without AI — and why I trusted my judgment
+## 4. Two decisions I made without AI and why I trusted my judgment
 
 1. **Naive clinic-local datetimes (Africa/Nairobi) instead of storing UTC.**
    Nairobi has no DST and the clinic runs in one place, so wall-clock times
    match how staff and patients think; converting everywhere would add
    complexity with no payoff at this scale. I trusted this because it's
-   domain reasoning — the brief describes a single small clinic that runs on one wall clock, not a multi-region platform — and the migration
+   domain reasoning the brief describes a single small clinic that runs on one wall clock, not a multi-region platform and the migration
    path to UTC-per-clinic is written down if the clinic grows.
 2. **Reschedule keeps the same doctor.** In a real clinic, "move my
    appointment" means moving *that* consultation; switching doctors is a
